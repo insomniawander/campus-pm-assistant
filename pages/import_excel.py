@@ -6,6 +6,7 @@ import streamlit as st
 
 from database.db import import_tasks
 from services.excel_parser import build_task_key, file_hash, list_sheets, parse_workbook
+from styles import page_intro
 
 
 def default_project_name(filename):
@@ -22,7 +23,11 @@ def _edited_tasks(frame, project_name):
 
 
 def show():
-    st.header("📥 Excel 智能导入")
+    page_intro(
+        "Smart import",
+        "把排期表变成可执行任务。",
+        "一次上传多个项目文件，检查识别结果后统一写入任务库。",
+    )
     uploaded_files = st.file_uploader(
         "上传 Excel 排期表",
         type=["xlsx", "xlsm"],
@@ -30,7 +35,10 @@ def show():
         key="batch_excel_upload",
     )
     if not uploaded_files:
-        st.info("可一次选择多个 Excel；系统会默认使用文件名作为项目名称。")
+        st.info(
+            "可一次选择多个 Excel；系统会默认使用文件名作为项目名称。",
+            icon=":material/upload_file:",
+        )
         return
 
     defaults = pd.DataFrame({
@@ -38,7 +46,7 @@ def show():
         "项目名称": [default_project_name(uploaded.name) for uploaded in uploaded_files],
         "排期年份": [date.today().year] * len(uploaded_files),
     })
-    st.subheader("确认项目信息")
+    st.subheader("确认项目信息", anchor=False)
     project_settings = st.data_editor(
         defaults,
         key="batch_project_settings",
@@ -75,7 +83,11 @@ def show():
         year = date.today().year if pd.isna(year_value) else int(year_value)
         content = uploaded.getvalue()
         digest = file_hash(content)
-        with st.expander(f"{uploaded.name} → {project_name or '请填写项目名称'}", expanded=len(uploaded_files) == 1):
+        with st.expander(
+            f"{uploaded.name} → {project_name or '请填写项目名称'}",
+            expanded=len(uploaded_files) == 1,
+            icon=":material/table_view:",
+        ):
             try:
                 sheets = list_sheets(content)
                 tasks = parse_workbook(content, project_name or "预览项目", year)
@@ -117,6 +129,7 @@ def show():
         f"确认导入全部文件（{len(ready)} 个）",
         type="primary",
         disabled=not ready or bool(invalid_names),
+        icon=":material/database_upload:",
     ):
         total = 0
         results = []
