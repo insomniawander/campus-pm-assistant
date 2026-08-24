@@ -2,6 +2,7 @@ import pandas as pd
 import streamlit as st
 
 from database.db import list_projects, query_tasks
+from styles import page_intro
 
 
 def gantt_rows(tasks):
@@ -31,7 +32,11 @@ def gantt_rows(tasks):
 
 
 def show():
-    st.header("📊 项目甘特图")
+    page_intro(
+        "Timeline",
+        "让所有节点一目了然。",
+        "按项目和负责人查看任务跨度、截止时间与完成状态。",
+    )
     projects = list_projects()
     project_options = {"全部项目": None, **{p["project_name"]: p["id"] for p in projects}}
     project_name = st.selectbox("项目筛选", list(project_options), key="gantt_project")
