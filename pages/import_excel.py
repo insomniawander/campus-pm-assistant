@@ -9,7 +9,6 @@ from services.excel_parser import build_task_key, file_hash, list_sheets, parse_
 
 def show():
     st.header("📥 Excel 智能导入")
-    st.caption("支持标准明细表、芯港集成“每日详情”和人才汇三列式项目排期。")
     project_name = st.text_input("项目名称（必填）")
     year = st.number_input("排期年份", min_value=2020, max_value=2100, value=date.today().year)
     uploaded = st.file_uploader("上传 Excel 排期表", type=["xlsx", "xlsm"])
@@ -28,7 +27,7 @@ def show():
     preview = pd.DataFrame(tasks).drop(columns=["task_key"], errors="ignore")
     st.success(f"识别到 {len(tasks)} 项任务")
     st.caption("可直接修改识别结果，也可以删除不需要导入的行。")
-    edited = st.data_editor(preview, use_container_width=True, hide_index=True, num_rows="dynamic")
+    edited = st.data_editor(preview, width="stretch", hide_index=True, num_rows="dynamic")
     strategy_label = st.radio("重复上传处理方式", ["跳过重复任务", "更新已有任务", "覆盖该项目全部任务"], horizontal=True)
     strategy = {"跳过重复任务": "skip", "更新已有任务": "update", "覆盖该项目全部任务": "overwrite"}[strategy_label]
     if st.button("确认导入数据库", type="primary", disabled=not project_name.strip()):
