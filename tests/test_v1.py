@@ -16,6 +16,7 @@ from services.reminder import classify_tasks
 import database.db as db
 from services.excel_parser import build_task_key
 from pages.gantt import gantt_rows
+from pages.import_excel import default_project_name
 
 
 class V1Tests(unittest.TestCase):
@@ -95,6 +96,9 @@ class V1Tests(unittest.TestCase):
         self.assertEqual(len(rows), 2)
         self.assertEqual(rows.iloc[0]["显示截止日期"], "2026-08-30")
         self.assertEqual(rows.iloc[1]["开始日期"].strftime("%Y-%m-%d"), "2026-09-01")
+
+    def test_batch_import_defaults_project_name_from_filename(self):
+        self.assertEqual(default_project_name("0806 芯港集成排期日历.xlsx"), "0806 芯港集成排期日历")
 
 
 if __name__ == "__main__":
