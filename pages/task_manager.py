@@ -6,6 +6,7 @@ import streamlit as st
 from database.db import (bulk_update_status, create_task, delete_task, list_projects,
                          query_tasks, task_history, update_task)
 from services.excel_parser import build_task_key
+from styles import page_intro
 
 STATUSES = ["未开始", "进行中", "已完成", "延期"]
 PRIORITIES = ["普通", "重要", "紧急"]
@@ -38,7 +39,11 @@ def _task_form(prefix, project_name, task=None):
 
 
 def show():
-    st.header("✅ 任务管理")
+    page_intro(
+        "Task operations",
+        "每项任务都可以被持续推进。",
+        "筛选负责人和项目，批量更新状态，或手动新增、修改、延期与删除任务。",
+    )
     projects = list_projects()
     if not projects:
         st.info("暂无项目，请先导入 Excel。")
@@ -57,7 +62,7 @@ def show():
     selected_labels = st.multiselect("选择任务（可批量修改状态）", list(labels))
     b1, b2 = st.columns([2, 1])
     bulk_status = b1.selectbox("批量设置状态", STATUSES, key="bulk_status")
-    if b2.button("应用到选中任务", disabled=not selected_labels):
+    if b2.button("应用到选中任务", disabled=not selected_labels, icon=":material/done_all:"):
         bulk_update_status([labels[x]["id"] for x in selected_labels], bulk_status)
         st.success("批量状态已更新")
         st.rerun()
@@ -65,38 +70,38 @@ def show():
     if tasks:
         frame = pd.DataFrame(tasks)
         st.dataframe(frame[["id", "project_name", "task_name", "stage", "owner", "start_date", "end_date", "status", "priority"]],
-                     use_container_width=True, hide_index=True)
+                     width="stretch", hide_index=True)
     else:
         st.info("当前筛选条件下没有任务。")
 
-    with st.expander("➕ 新增单个任务"):
+    with st.expander("新增单个任务", icon=":material/add_task:"):
         project_name = st.selectbox("所属项目", list(project_map), key="new_project")
         new_task = _task_form("new", project_name)
-        if st.button("新增任务", disabled=not new_task["task_name"]):
+        if st.button("新增任务", disabled=not new_task["task_name"], icon=":material/add:"):
             create_task(project_map[project_name], new_task)
             st.success("任务已新增")
             st.rerun()
 
     if labels:
-        with st.expander("✏️ 编辑、延期或删除任务"):
+        with st.expander("编辑、延期或删除任务", icon=":material/edit_calendar:"):
             selected_label = st.selectbox("选择任务", list(labels), key="edit_select")
             selected = labels[selected_label]
             edited = _task_form("edit", selected["project_name"], selected)
             reason = st.text_input("修改/延期原因（修改日期时建议填写）")
             c1, c2 = st.columns(2)
-            if c1.button("保存修改", type="primary", disabled=not edited["task_name"]):
+            if c1.button("保存修改", type="primary", disabled=not edited["task_name"], icon=":material/save:"):
                 update_task(selected["id"], edited, reason)
                 st.success("任务已更新，日期变更已记录到历史。")
                 st.rerun()
             confirm = c2.checkbox("确认删除", key="delete_confirm")
-            if c2.button("删除任务", disabled=not confirm):
+            if c2.button("删除任务", disabled=not confirm, icon=":material/delete:"):
                 delete_task(selected["id"])
                 st.success("任务已删除")
                 st.rerun()
             history = task_history(selected["id"])
             st.subheader("变更与延期历史")
             if history:
-                st.dataframe(pd.DataFrame(history)[["action", "old_value", "new_value", "reason", "create_time"]], hide_index=True, use_container_width=True)
+                st.dataframe(pd.DataFrame(history)[["action", "old_value", "new_value", "reason", "create_time"]], hide_index=True, width="stretch")
             else:
                 st.caption("暂无变更记录。")
 
