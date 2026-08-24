@@ -15,6 +15,7 @@ from services.excel_parser import parse_workbook
 from services.reminder import classify_tasks
 import database.db as db
 from services.excel_parser import build_task_key
+from pages.gantt import gantt_rows
 
 
 class V1Tests(unittest.TestCase):
@@ -81,6 +82,19 @@ class V1Tests(unittest.TestCase):
             db.DB_PATH = old_path
             if test_path.exists():
                 test_path.unlink()
+
+    def test_gantt_rows_support_ranges_and_single_dates(self):
+        rows = gantt_rows([
+            {"project_name": "项目A", "task_name": "区间任务", "stage": "宣传", "owner": "小王",
+             "status": "进行中", "start_date": "2026-08-25", "end_date": "2026-08-30"},
+            {"project_name": "项目B", "task_name": "单日任务", "stage": "执行", "owner": "",
+             "status": "未开始", "start_date": None, "end_date": "2026-09-01"},
+            {"project_name": "项目C", "task_name": "待定", "stage": "", "owner": "",
+             "status": "未开始", "start_date": None, "end_date": None},
+        ])
+        self.assertEqual(len(rows), 2)
+        self.assertEqual(rows.iloc[0]["显示截止日期"], "2026-08-30")
+        self.assertEqual(rows.iloc[1]["开始日期"].strftime("%Y-%m-%d"), "2026-09-01")
 
 
 if __name__ == "__main__":
