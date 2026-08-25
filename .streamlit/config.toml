@@ -2,6 +2,9 @@
 showSidebarNavigation = false
 toolbarMode = "minimal"
 
+[server]
+maxUploadSize = 50
+
 [theme]
 base = "light"
 primaryColor = "#0052FF"
@@ -36,4 +39,5 @@ backgroundColor = "#0052FF"
 secondaryBackgroundColor = "#124EDE"
 textColor = "#FFFFFF"
 borderColor = "#2B68FF"
+
 
