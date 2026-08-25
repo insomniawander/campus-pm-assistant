@@ -5,7 +5,17 @@ import pandas as pd
 import streamlit as st
 
 from database.db import import_tasks
-from services.excel_parser import build_task_key, file_hash, list_sheets, parse_workbook
+from services.excel_parser import (
+    WorkbookParseError,
+    build_task_key,
+    file_hash,
+    parse_workbook_with_sheets,
+)
+from services.upload_validation import (
+    SUPPORTED_UPLOAD_TYPES,
+    UploadValidationError,
+    validate_excel_upload,
+)
 from styles import page_intro
 
 
@@ -29,10 +39,11 @@ def show():
         "一次上传多个项目文件，检查识别结果后统一写入任务库。",
     )
     uploaded_files = st.file_uploader(
-        "上传 Excel 排期表",
-        type=["xlsx", "xlsm"],
+        "上传 Excel 排期表（.xlsx、.xlsm、.xls）",
+        type=list(SUPPORTED_UPLOAD_TYPES),
         accept_multiple_files=True,
         key="batch_excel_upload",
+        help="单个文件最大 50 MB；旧版 .xls 也可以直接上传。",
     )
     if not uploaded_files:
         st.info(
@@ -81,18 +92,23 @@ def show():
         year_value = project_settings.iloc[index]["排期年份"]
         project_name = "" if pd.isna(project_value) else str(project_value).strip()
         year = date.today().year if pd.isna(year_value) else int(year_value)
-        content = uploaded.getvalue()
-        digest = file_hash(content)
         with st.expander(
             f"{uploaded.name} → {project_name or '请填写项目名称'}",
             expanded=len(uploaded_files) == 1,
             icon=":material/table_view:",
         ):
             try:
-                sheets = list_sheets(content)
-                tasks = parse_workbook(content, project_name or "预览项目", year)
-            except Exception as exc:
+                content = validate_excel_upload(uploaded)
+                digest = file_hash(content)
+                sheets, tasks = parse_workbook_with_sheets(
+                    content, project_name or "预览项目", year
+                )
+            except (UploadValidationError, WorkbookParseError) as exc:
                 st.error(f"解析失败：{exc}")
+                failures.append(uploaded.name)
+                continue
+            except Exception:
+                st.error("解析失败：发生未预期的错误，请检查文件后重试。")
                 failures.append(uploaded.name)
                 continue
             st.caption("工作表：" + "、".join(sheets))
@@ -147,4 +163,5 @@ def show():
             results.append(f"{item['project_name']}：{count} 项")
         st.success(f"批量导入完成，共处理 {total} 项任务。")
         st.write("；".join(results))
+
 

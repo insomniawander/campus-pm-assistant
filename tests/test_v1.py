@@ -17,6 +17,17 @@ import database.db as db
 from services.excel_parser import build_task_key
 from pages.gantt import gantt_rows
 from pages.import_excel import default_project_name
+from services.excel_parser import WorkbookParseError, parse_workbook_with_sheets
+from services.upload_validation import UploadValidationError, validate_excel_upload
+
+
+class FakeUpload:
+    def __init__(self, name, content):
+        self.name = name
+        self._content = content
+
+    def getvalue(self):
+        return self._content
 
 
 class V1Tests(unittest.TestCase):
@@ -100,7 +111,20 @@ class V1Tests(unittest.TestCase):
     def test_batch_import_defaults_project_name_from_filename(self):
         self.assertEqual(default_project_name("0806 芯港集成排期日历.xlsx"), "0806 芯港集成排期日历")
 
+    def test_upload_validation_rejects_empty_or_mismatched_files(self):
+        with self.assertRaisesRegex(UploadValidationError, "为空"):
+            validate_excel_upload(FakeUpload("empty.xlsx", b""))
+        with self.assertRaisesRegex(UploadValidationError, "扩展名不一致"):
+            validate_excel_upload(FakeUpload("fake.xlsx", b"not an Excel workbook"))
+
+    def test_workbook_is_opened_once_and_returns_sheet_names(self):
+        content = self.workbook({"项目排期": [["日期", "模块", "事项"], ["8月25日", "宣传", "发布推文"]]})
+        sheets, tasks = parse_workbook_with_sheets(content, "测试项目", 2026)
+        self.assertEqual(sheets, ["项目排期"])
+        self.assertEqual(tasks[0]["task_name"], "发布推文")
+
 
 if __name__ == "__main__":
     unittest.main()
+
 

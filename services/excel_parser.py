@@ -8,13 +8,37 @@ import pandas as pd
 from services.field_matcher import find_header_row, match_fields
 
 
+class WorkbookParseError(ValueError):
+    """A user-facing workbook parsing failure."""
+
+
+def _engine_for(source):
+    if isinstance(source, bytes):
+        if source.startswith(b"PK"):
+            return "openpyxl"
+        if source.startswith(b"\xd0\xcf\x11\xe0"):
+            return "xlrd"
+    return None
+
+
+def _open_excel(source):
+    stream = BytesIO(source) if isinstance(source, bytes) else source
+    try:
+        return pd.ExcelFile(stream, engine=_engine_for(source))
+    except ImportError as exc:
+        raise WorkbookParseError("服务器缺少读取旧版 .xls 文件所需的 xlrd 依赖。") from exc
+    except Exception as exc:
+        raise WorkbookParseError("无法打开工作簿；文件可能已损坏、加密或不是有效的 Excel 文件。") from exc
+
+
 def list_sheets(source):
-    return pd.ExcelFile(BytesIO(source) if isinstance(source, bytes) else source, engine="openpyxl").sheet_names
+    with _open_excel(source) as workbook:
+        return workbook.sheet_names
 
 
 def read_sheet(source, sheet_name, header=None):
-    source = BytesIO(source) if isinstance(source, bytes) else source
-    return pd.read_excel(source, sheet_name=sheet_name, header=header, engine="openpyxl")
+    with _open_excel(source) as workbook:
+        return workbook.parse(sheet_name=sheet_name, header=header)
 
 
 def read_excel(source):
@@ -133,18 +157,28 @@ def _three_column_sheet(df, sheet, project_name, year):
     return tasks
 
 
-def parse_workbook(content, project_name, year=None):
+def parse_workbook_with_sheets(content, project_name, year=None):
     year = year or date.today().year
-    sheets = list_sheets(content)
-    preferred = [s for s in sheets if "每日详情" in s]
-    targets = preferred or [s for s in sheets if "排期" in s] or sheets
-    tasks = []
-    for sheet in targets:
-        df = read_sheet(content, sheet, header=None)
-        parsed = _standard_sheet(df, sheet, project_name, year)
-        if not parsed and ("项目排期" in sheet or len(clean_dataframe(df).columns) <= 5):
-            parsed = _three_column_sheet(df, sheet, project_name, year)
-        tasks.extend(parsed)
+    with _open_excel(content) as workbook:
+        sheets = workbook.sheet_names
+        preferred = [s for s in sheets if "每日详情" in s]
+        targets = preferred or [s for s in sheets if "排期" in s] or sheets
+        tasks = []
+        for sheet in targets:
+            try:
+                df = workbook.parse(sheet_name=sheet, header=None)
+            except Exception as exc:
+                raise WorkbookParseError(f"无法读取工作表“{sheet}”。") from exc
+            parsed = _standard_sheet(df, sheet, project_name, year)
+            if not parsed and ("项目排期" in sheet or len(clean_dataframe(df).columns) <= 5):
+                parsed = _three_column_sheet(df, sheet, project_name, year)
+            tasks.extend(parsed)
     unique = {task["task_key"]: task for task in tasks}
-    return list(unique.values())
+    return sheets, list(unique.values())
+
+
+def parse_workbook(content, project_name, year=None):
+    _, tasks = parse_workbook_with_sheets(content, project_name, year)
+    return tasks
+
 
