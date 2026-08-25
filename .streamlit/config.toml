@@ -7,12 +7,12 @@ maxUploadSize = 50
 
 [theme]
 base = "light"
-primaryColor = "#0052FF"
+primaryColor = "#3A38D6"
 backgroundColor = "#FFFFFF"
-secondaryBackgroundColor = "#F4F6F8"
+secondaryBackgroundColor = "#F7F7FE"
 textColor = "#0A0B0D"
-linkColor = "#0052FF"
-borderColor = "#D8DCE3"
+linkColor = "#3A38D6"
+borderColor = "#E3E3FD"
 showWidgetBorder = true
 showSidebarBorder = false
 baseRadius = "4px"
@@ -22,22 +22,22 @@ headingFont = "Inter:https://fonts.googleapis.com/css2?family=Inter:wght@500;600
 baseFontSize = 15
 headingFontSizes = ["4rem", "2rem", "1.45rem", "1.1rem", "1rem", ".9rem"]
 headingFontWeights = [800, 700, 700, 650, 650, 650]
-chartCategoricalColors = ["#0052FF", "#00A86B", "#FF7A00", "#7C3AED", "#E5484D", "#00A8E8", "#6B7280"]
+chartCategoricalColors = ["#3A38D6", "#6F6DF5", "#9A99F8", "#2623B8", "#00A86B", "#FF7A00", "#E5484D"]
 redColor = "#D92D20"
 orangeColor = "#D97706"
 greenColor = "#11845B"
-blueColor = "#0052FF"
+blueColor = "#3A38D6"
 violetColor = "#7C3AED"
 grayColor = "#667085"
-dataframeBorderColor = "#D8DCE3"
-dataframeHeaderBackgroundColor = "#F4F6F8"
+dataframeBorderColor = "#E3E3FD"
+dataframeHeaderBackgroundColor = "#F7F7FE"
 linkUnderline = false
 
 [theme.sidebar]
 primaryColor = "#FFFFFF"
-backgroundColor = "#0052FF"
-secondaryBackgroundColor = "#124EDE"
+backgroundColor = "#141173"
+secondaryBackgroundColor = "#2623B8"
 textColor = "#FFFFFF"
-borderColor = "#2B68FF"
+borderColor = "#5552EA"
 
 
