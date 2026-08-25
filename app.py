@@ -20,6 +20,7 @@ def navigate(page):
 def sync_sidebar_navigation():
     navigate(st.session_state.sidebar_navigation)
 
+
 st.set_page_config(
     page_title="Campus PM Assistant",
     page_icon=":material/calendar_month:",
@@ -69,4 +70,4 @@ elif page == "Project Management":
 else:
     show_dashboard()
 
-
+# Deployment refresh: 2026-08-25 16:15 CST
