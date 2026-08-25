@@ -137,8 +137,8 @@ def sidebar_brand():
         """
         <div class="cpma-sidebar-brand">
             <div class="cpma-sidebar-brand__mark">C</div>
-            <h2>Campus PM<br>Assistant</h2>
-            <p>Recruitment operations</p>
+            <h2>Campus Project<br>Hub</h2>
+            <p>Project operations</p>
         </div>
         """
     )
@@ -154,4 +154,5 @@ def page_intro(eyebrow, title, description):
         </section>
         """
     )
+
 

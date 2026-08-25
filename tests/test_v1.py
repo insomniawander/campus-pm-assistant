@@ -19,6 +19,7 @@ from pages.gantt import gantt_rows
 from pages.import_excel import default_project_name
 from services.excel_parser import WorkbookParseError, parse_workbook_with_sheets
 from services.upload_validation import UploadValidationError, validate_excel_upload
+from services.exporter import build_export_workbook
 
 
 class FakeUpload:
@@ -122,6 +123,16 @@ class V1Tests(unittest.TestCase):
         sheets, tasks = parse_workbook_with_sheets(content, "测试项目", 2026)
         self.assertEqual(sheets, ["项目排期"])
         self.assertEqual(tasks[0]["task_name"], "发布推文")
+
+    def test_export_workbook_contains_projects_and_tasks(self):
+        content = build_export_workbook(
+            [{"id": 1, "project_name": "项目 A", "task_count": 1, "completed_count": 0}],
+            [{"id": 2, "project_name": "项目 A", "task_name": "发布推文"}],
+        )
+        workbook = pd.ExcelFile(BytesIO(content), engine="openpyxl")
+        self.assertEqual(workbook.sheet_names, ["Projects", "Tasks"])
+        tasks = pd.read_excel(BytesIO(content), sheet_name="Tasks", engine="openpyxl")
+        self.assertEqual(tasks.loc[0, "Task Name"], "发布推文")
 
 
 if __name__ == "__main__":

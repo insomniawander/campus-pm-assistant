@@ -1,12 +1,24 @@
 import streamlit as st
+from datetime import date
 
-from database.db import init_db
+from database.db import init_db, list_projects, query_tasks
 from pages.dashboard import show as show_dashboard
 from pages.import_excel import show as show_import
-from pages.gantt import show as show_gantt
 from pages.project_manager import show as show_projects
 from pages.task_manager import show as show_tasks
+from services.exporter import build_export_workbook
 from styles import apply_app_style, sidebar_brand
+
+
+NAV_ITEMS = ("Daily Work", "Task Management", "Project Management")
+
+
+def navigate(page):
+    st.session_state.current_page = page
+
+
+def sync_sidebar_navigation():
+    navigate(st.session_state.sidebar_navigation)
 
 st.set_page_config(
     page_title="Campus PM Assistant",
@@ -17,16 +29,44 @@ st.set_page_config(
 apply_app_style()
 init_db()
 
+if "current_page" not in st.session_state:
+    st.session_state.current_page = NAV_ITEMS[0]
+if "sidebar_navigation" not in st.session_state:
+    st.session_state.sidebar_navigation = NAV_ITEMS[0]
+
 with st.sidebar:
     sidebar_brand()
-    menu = st.radio(
-        "功能导航",
-        ["每日工作台", "Excel 智能导入", "任务管理", "项目甘特图", "多项目管理"],
+    st.radio(
+        "Navigation",
+        NAV_ITEMS,
         label_visibility="collapsed",
+        key="sidebar_navigation",
+        on_change=sync_sidebar_navigation,
     )
-    st.caption("Excel 排期 · 待办提醒 · 项目协同")
+    st.download_button(
+        "Export Data",
+        data=build_export_workbook(list_projects(), query_tasks()),
+        file_name=f"campus-projects-{date.today().isoformat()}.xlsx",
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        icon=":material/download:",
+        width="stretch",
+    )
 
-{"每日工作台": show_dashboard, "Excel智能导入": show_import, "任务管理": show_tasks,
- "Excel 智能导入": show_import, "项目甘特图": show_gantt,
- "多项目管理": show_projects}[menu]()
+page = st.session_state.current_page
+if page == "Excel Import":
+    if st.button(
+        "Back to Project Management",
+        icon=":material/arrow_back:",
+        on_click=navigate,
+        args=("Project Management",),
+    ):
+        pass
+    show_import()
+elif page == "Task Management":
+    show_tasks()
+elif page == "Project Management":
+    show_projects(on_import=lambda: navigate("Excel Import"))
+else:
+    show_dashboard()
+
 
